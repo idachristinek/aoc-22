@@ -1,18 +1,21 @@
-//use std::env;
-use std::fmt;
-use std::fs;
+use rust::elf::Elf;
+use rust::file::read_file;
+use std::str::Lines;
 
 fn main() {
     let file_path = "src/input.txt";
-    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
-    let values = contents.lines();
-
-    //println!("With text:\n{contents}");
-
+    let content = read_file(file_path);
+    let values = content.lines();
     let mut elves: Vec<Elf> = Vec::new();
+
+    add_elves(values, &mut elves);
+    find_max_elf(&mut elves);
+    find_top_three(&mut elves);
+}
+
+fn add_elves(values: Lines<'_>, elves: &mut Vec<Elf>) {
     let mut idx = 1;
     let mut current_elf = Elf::new(idx, Vec::new(), 0);
-    let mut max_elf = Elf::new(idx, Vec::new(), 0);
 
     for part in values {
         if part.is_empty() {
@@ -29,58 +32,39 @@ fn main() {
 
     // Adding final elf since our data does not end with an whitespace
     elves.push(current_elf);
+}
+
+fn find_max_elf(elves: &mut Vec<Elf>) {
+    let mut max_elf = Elf::new(0, Vec::new(), 0);
 
     for elf in elves {
-        println!("Elf number {} has calories: {}", elf.number, elf.calories,);
-
         if max_elf.calories < elf.calories {
-            println!(
-                "Updating max_elf as current elf has more: curr: {}, max: {}",
-                elf.calories, max_elf.calories
-            );
-
-            max_elf = Elf::new(elf.number, elf.values, elf.calories);
+            max_elf = Elf::new(elf.number, Vec::new(), elf.calories);
         }
     }
+
     println!(
         "The elf with the most calories: {} is number: {}",
         max_elf.calories, max_elf.number
     );
-
 }
 
-pub struct Elf {
-    pub number: i32,
-    pub values: Vec<String>,
-    pub calories: i32,
-}
+fn find_top_three(elves: &mut Vec<Elf>) {
+    let mut top_three: Vec<i32> = Vec::new();
+    let mut sorted: Vec<i32> = Vec::new();
+    let mut top_three_total = 0;
 
-impl Elf {
-    pub fn new(number: i32, values: Vec<String>, calories: i32) -> Self {
-        Self {
-            values: values,
-            calories: calories,
-            number: number,
-        }
+    for elf in elves {
+        sorted.push(elf.calories);
     }
-}
 
-impl fmt::Debug for Elf {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Elf")
-            .field("values", &self.values)
-            .finish()
-    }
-}
+    sorted.sort_by(|a, b| b.cmp(a));
 
-impl fmt::Display for Elf {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut str = "Elf: {number} has {calories} calories. ";
-        for name in &self.values {
-            fmt.write_str(str)?;
-            fmt.write_str(name)?;
-            str = ", ";
-        }
-        Ok(())
+    for n in 0..3 {
+        top_three.push(sorted[n]);
+        top_three_total += sorted[n];
     }
+
+    println!("Top Three:  {:?}", top_three);
+    println!("Top Three total:  {}", top_three_total);
 }
